@@ -1,0 +1,48 @@
+README v0.1.3
+
+v0.1.3 2/26/16
+Convert data to .rds to allow dynamic re-assignment based on requested biennials.
+Support only NHANES 09/10 and 11/12 for GRAS notifications going forward.
+Use biteR 0.1.2 in include 07/08.
+
+v0.1.2 5/12/15
+Change control 2:  Report percent users of the age band, not of the total.
+
+v0.1.1 4/28/15
+Change control 1:  Collapse the age bands 6-12 and 13-18 into 6-18.
+
+
+biteR requires the following packages. Sometimes development versions of packages do not install dependencies, so I suggest you install and attach these first.
+
+    survey,
+    car,
+    utils,
+    data.table,
+    plyr
+
+Using the Packages tab Install function, or manually, install the biteR package from the biteR_0.1.tar.gz source file.
+
+There is a single wrap-around bite function with one parameter:  the path to the input .csv file:  bite(file_name = "<file_name>").  Results should look something like what follows.
+
+For documentation, suggest you start with >package?biteR and >?bite
+
+> install.packages("~/Documents/Tox Strategies/GRAS/biteR_0.1.tar.gz", repos = NULL, type = "source")
+* installing *source* package ‘biteR’ ...
+** R
+** data
+*** moving datasets to lazyload DB
+** preparing package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** testing if installed package can be loaded
+* DONE (biteR)
+> library(biteR)
+> setwd("~/Documents/Tox Strategies/GRAS")
+> Results <- bite(file_name = "CPF_proportions_final_042215.csv")
+> names(Results)
+[1] "full"   "female" "male"  
+> Full <- Results$full
+> Female <- Results$female
+> Male <- Results$male
+

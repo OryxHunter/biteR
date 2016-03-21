@@ -1,0 +1,43 @@
+Package: biteR
+Title: Body Intake Estimator (NHANES)
+Description: biteR provides tools for estimating population body intake of a substance, given the proportion present by food code, and based on NHANES daily dietary interview data.  It uses NHANES guidelines for combining survey cycles and relies on pkg:survey to generate correctly weighted population estimates.
+Version: 0.1.3
+Authors@R: c(person("Anne", "Bichteler", role = c("aut", "cre"),
+    email = "abichteler@toxstrategies.com"))
+Maintainer: Anne Bichteler <abichteler@toxstrategies.com>
+Depends:
+    R (>= 3.1.2)
+Imports:
+    survey,
+    car,
+    utils,
+    data.table,
+    plyr
+Suggests:
+    testthat
+License: GPL (>= 3)
+LazyData: TRUE
+Collate:
+    'biteR-package.R'
+    'bite.R'
+    'bite.size.R'
+    'param.bite.R'
+    'raw.bite.R'
+    'pop.bite.R'
+    'dynamic_load.R'
+    'Codes_07.R'
+    'Codes_09.R'
+    'Codes_11.R'
+    'Day1_07.R'
+    'Day2_07.R'
+    'Day1_09.R'
+    'Day2_09.R'
+    'Day1_11.R'
+    'Day2_11.R'
+    'Demo_07.R'
+    'Demo_09.R'
+    'Demo_11.R'
+    'Weight_07.R'
+    'Weight_09.R'
+    'Weight_11.R'
+Packaged: NA
