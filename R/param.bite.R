@@ -57,18 +57,18 @@ param.bite <- function (file_name = "", type = "") {
   
   # Here, create temporary data.tables of records for each use
   # and one total table, using the highest proportion * use level 
-  # in the case that a food code is associated with more than one.
+  # for the case that a food code is associated with more than one use.
   
   if (type == "amt") {
   # For population intake estimates, remove records with no 2-day sample weight; these are considered incomplete
   Records <- Records[complete.cases(Records),]
-  # For portion size estimates, do not require complete cases
   }
   
   Records <- data.table(Records)
   setkey(Records, FDCD)
   
   Uses <- as.factor(levels(Input$Use))
+  colnames(Input)[1] <- "FDCD"
   Input <- data.table(Input)
   setkey(Input, Use)
   
@@ -77,17 +77,13 @@ param.bite <- function (file_name = "", type = "") {
   for (a in 1:length(Uses)) {   
     Use_temp <- Uses[a]
     Foods_temp <- Input[Use == Use_temp]
-    setkey(Foods_temp, Food_code)
-    Records_temp <- Records[FDCD %in% Foods_temp$Food_code]
+    setkey(Foods_temp, FDCD)
+    Records_temp <- Records[FDCD %in% Foods_temp$FDCD]
     Use <- as.character(Use_temp)
-    Records_temp$Use <- Use
-    Records_temp$Use_level <- Foods_temp$Use_level[1]
-    Records_temp$Prop <- Foods_temp[Food_code == Records_temp$FDCD, Proportion]
+    Records_temp <- merge(Records_temp, Foods_temp[, c("FDCD", "Proportion", "Use_level"), with = FALSE])
     setkey(Records_temp, SEQN)
-    Records_temp$BMXWT <- Weight[SEQN %in% Records_temp$SEQN, BMXWT]
-    Records_temp$RIDAGEYR <- Demo[SEQN %in% Records_temp$SEQN, RIDAGEYR]
-    Records_temp$RIAGENDR <- Demo[SEQN %in% Records_temp$SEQN, RIAGENDR]
-    
+    Records_temp <- merge(Records_temp, Weight)
+    Records_temp <- merge(Records_temp, Demo)
     Record_tables[[Use]] <- Records_temp
   }
   
@@ -95,7 +91,7 @@ param.bite <- function (file_name = "", type = "") {
   # associated with each food code. First create a reduced Input table by
   # Removing the duplicate food codes with lower use level.
   Input_total <- Input
-  setkey(Input_total, Food_code)
+  setkey(Input_total, FDCD)
   
   repeat {
     # defaults to duplicates on the data table key (food code) only
@@ -114,12 +110,12 @@ param.bite <- function (file_name = "", type = "") {
   
   # Use the full set of records for the total data.table
   Records$Use <- "Total"
-  Records$Use_level <- Input_total[Food_code == Records$FDCD]$Use_level
-  Records$Prop <- Input_total[Food_code == Records$FDCD]$Proportion
+  setkey(Records, "FDCD")
+  Input_total$Use <- NULL
+  Records <- merge(Records, Input_total)
   setkey(Records, SEQN)
-  Records$BMXWT <- Weight[SEQN %in% Records$SEQN, BMXWT]
-  Records$RIDAGEYR <- Demo[SEQN %in% Records$SEQN, RIDAGEYR]
-  Records$RIAGENDR <- Demo[SEQN %in% Records$SEQN, RIAGENDR]
+  Records <- merge(Records, Weight)
+  Records <- merge(Records, Demo)
   Record_tables[["Total"]] <- Records
 
   # Add 2-day dietary sample weights
@@ -135,7 +131,7 @@ param.bite <- function (file_name = "", type = "") {
   Sample_wts$Cycles_2_WTDR2D <- Sample_wts$WTDR2D/Divisor
   Demo <- merge(Demo, Sample_wts, by = "SEQN")
   Demo <- data.table(Demo, key = "SEQN")
-  Demo[SEQN == Weight$SEQN, BMXWT := Weight$BMXWT]
+  Demo <- merge(Demo, Weight)
   
   Bite <- list(
     type = type,

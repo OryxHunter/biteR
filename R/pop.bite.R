@@ -22,6 +22,8 @@
 
 pop.bite <- function (x) {
   
+  requireNamespace("survey")
+  
   if (x$type == "amt") {
     # Return to data frames for survey statistics
     Data <- data.frame(x$demo)

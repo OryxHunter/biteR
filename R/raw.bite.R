@@ -19,10 +19,10 @@ raw.bite <- function (x) {
   Records <- x$records
   Use_data <- x$use_data
   
-  # For each table of records (one for each use + one for total),
-  # calculate the amount consumed per record
+  # For each table of records calculate the amount consumed per record
   for (t in 1:length(Records)) {
     Records[[t]]$Amt <- Records[[t]]$GRMS * Records[[t]]$Prop * Records[[t]]$Use_level 
+    Records[[t]]$Per_kg <- (Records[[t]]$GRMS * Records[[t]]$Prop * Records[[t]]$Use_level)/Records[[t]]$BMXWT
     Records[[t]]$SEQN <- as.character(Records[[t]]$SEQN)
     setkey(Records[[t]], SEQN)
   }
@@ -34,7 +34,7 @@ raw.bite <- function (x) {
   # Also, different food codes in the same category may be eaten on the same day, same occasion.
   # This loop keeps the records for each such case, but the Amt_OCCSN is the total consumed
   # by the person in this category by day and occasion.
-
+  
   if (Type == "size") {
     for (r in 1:length(col_list)) {
       Col <- col_list[r]
@@ -42,7 +42,7 @@ raw.bite <- function (x) {
       keycols = c("SEQN","Day", "OCCSN")
       setkeyv(Use_table, keycols)
       Use_table[, Amt_OCCSN := sum(Amt), by = keycols]    
-      # De-dupe. Desire one record per SEQN-day-occasion per category.
+      # De-dupe. Desire one record per SEQN-day-occasion per use.
       Use_table <- unique(Use_table, by = keycols)
       Records[[Col]] <- Use_table
     }
@@ -54,21 +54,20 @@ raw.bite <- function (x) {
     Demo <- Demo[, SEQN:=as.character(SEQN)]
     setkey(Demo, SEQN)
     
-    # Creating new columns in a data.table appears to require access by index number 
-    # in a list, at least in this release, and cannot be referenced through a variable.
-    # Adding to Demo table the raw amount per day & raw amount per day / kg body weight
     for (r in 1:length(col_list)) {
       Col <- col_list[r]
-      Demo[, col_list[r] := 0]
       Use_table <- Records[[Col]]
       setkey(Use_table, SEQN)
-      Use_table[, Per_kg := Amt/BMXWT]
-      Use_table[, Amt_SEQN := sum(Amt)/2, by = SEQN]     
-      Demo[SEQN == Use_table$SEQN, col_list[r] := Use_table$Amt_SEQN]
+      Use <- c(paste(col_list[r]))
       By_kg <- c(paste(col_list[r], "_per_kg", sep = ""))
-      Demo[, By_kg[1] := 0]
-      Use_table[, Amt_kg_SEQN := sum(Per_kg)/2, by = SEQN]
-      Demo[SEQN == Use_table$SEQN, By_kg[1] := Use_table$Amt_kg_SEQN]
+      
+      Use_table[, Use[1] := sum(Amt)/2, by = SEQN]  
+      Use_table[, By_kg[1] := sum(Per_kg)/2, by = SEQN]
+
+      Demo <- merge(Demo, Use_table[, c("SEQN", Use[1], By_kg[1]), with = FALSE], all.x = TRUE)
+      Demo <- unique(Demo) # Removes all duplicated SEQN caused by merge.
+      Demo[is.na(get(Use[1])), Use[1] := 0, with=FALSE]
+      Demo[is.na(get(By_kg[1])), By_kg[1] := 0, with=FALSE]
     }
     x$demo <- Demo
   }
